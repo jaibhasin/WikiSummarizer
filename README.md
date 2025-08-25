@@ -82,6 +82,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - your.email@example.com
+Your Name - Jai Bhasin - bhasinjai@gmail.com
 
-Project Link: [https://github.com/yourusername/wikisummarizer](https://github.com/yourusername/wikisummarizer)
+Project Link: [https://github.com/jaibhasin/WikiSummarizer/](https://github.com/jaibhasin/WikiSummarizer/)
