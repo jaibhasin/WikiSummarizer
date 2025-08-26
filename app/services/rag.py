@@ -4,7 +4,8 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import os
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
+
 from langchain.schema import Document
 
 
@@ -19,7 +20,7 @@ class RAGService :
     def __init__(self, model = 'claude-3-5-haiku-latest'):
         self.embeddings = GoogleGenerativeAIEmbeddings(model='models/gemini-embedding-001')
         self.vector_store = None
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=130)
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=130)
         self.llm = ChatAnthropic(model=model)
 
     def prepare_chunks(self, sections):
@@ -32,6 +33,26 @@ class RAGService :
         self.vector_store = Chroma.from_documents(docs, self.embeddings , persist_directory="chroma_db")
         self.vector_store.persist()
     
+    def improved_query(self, query, title):
+        prompt = f"""
+                You are an assistant helping with Retrieval-Augmented Generation (RAG). 
+                The user asked a query about the article titled "{title}".
+
+                Rewrite this request into a clear and effective instruction for the RAG system:
+                - Be specific and contextualized to the given article.
+                - If the query is vague (e.g., "give me a summary"), make it more precise, 
+                like "Provide a concise summary of the main points, history, and impact of {title}".
+                - Keep it factual and focused on retrieved context.
+                - Maintain a helpful, neutral, and engaging tone.
+            """
+        # response = self.llm.predict(prompt)
+        messages = (
+            ("system", prompt),
+            ("user", query),
+        )
+        response = self.llm.invoke(messages)
+        return response.content.strip()
+
     def generate_response(self, title ,query):
         if not self.vector_store:
             return ValueError("Vector store not created !!!!")
@@ -71,5 +92,5 @@ class RAGService :
             | self.llm
             | StrOutputParser()
         )
-
+        query = self.improved_query(query , title)
         return chain.invoke({"title": title, "question": query})
