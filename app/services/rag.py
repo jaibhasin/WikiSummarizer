@@ -1,6 +1,8 @@
 # check if db is resest for new user 
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from operator import itemgetter
 import os
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -11,14 +13,19 @@ from langchain.schema import Document
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+# from langchain_core.runnables import RunnablePassthrough , RunnableParallel
+# from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+
 
 
 load_dotenv()
 
 class RAGService :
     def __init__(self, model = 'claude-3-5-haiku-latest'):
-        self.embeddings = GoogleGenerativeAIEmbeddings(model='models/gemini-embedding-001')
+        # self.embeddings = GoogleGenerativeAIEmbeddings(model='models/gemini-embedding-001')
+        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
         self.vector_store = None
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=130)
         self.llm = ChatAnthropic(model=model)
@@ -83,14 +90,15 @@ class RAGService :
         retriever = self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k":6})
 
         chain = (
-        RunnableParallel({
-            "context": retriever,        # retriever gets the query
-            "question": RunnablePassthrough(),  # pass query as-is
-            "title": RunnablePassthrough(),     # pass title as-is
+            RunnableParallel({
+                "context": itemgetter("question") | retriever,   # only pass question text
+                "question": itemgetter("question"),
+                "title": itemgetter("title"),
             })
             | prompt
             | self.llm
             | StrOutputParser()
         )
+
         query = self.improved_query(query , title)
         return chain.invoke({"title": title, "question": query})

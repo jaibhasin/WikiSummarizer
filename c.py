@@ -23,11 +23,11 @@ async def ingest_topic(topic: str):
 
         # Run multiple summary queries in parallel
         Quick_Overview, History_n_Timeline, Controversies_n_Debates, Impact_n_Legacy, Further_Reading_n_References = await asyncio.gather(
-            asyncio.to_thread(wiki_search1.get_quick_overview, topic, "Give a quick overview of the topic"),
-            asyncio.to_thread(wiki_search1.get_quick_overview, topic, "Give a brief history and timeline of the topic"),
-            asyncio.to_thread(wiki_search1.get_quick_overview, topic, "Are there any controversies or debates related to the topic"),
-            asyncio.to_thread(wiki_search1.get_quick_overview, topic, "What is the impact and legacy of the topic"),
-            asyncio.to_thread(wiki_search1.get_quick_overview, topic, "Provide further reading and references for the topic"),
+            asyncio.to_thread(rag1.generate_response, topic, "Give a quick overview of the topic"),
+            asyncio.to_thread(rag1.generate_response, topic, "Give a brief history and timeline of the topic"),
+            asyncio.to_thread(rag1.generate_response, topic, "Are there any controversies or debates related to the topic"),
+            asyncio.to_thread(rag1.generate_response, topic, "What is the impact and legacy of the topic"),
+            asyncio.to_thread(rag1.generate_response, topic, "Provide further reading and references for the topic"),
         )
         print(f"All summaries generated in {time.time() - start_time:.2f} sec")
 
@@ -38,7 +38,6 @@ async def ingest_topic(topic: str):
             "Controversies_n_Debates": Controversies_n_Debates,
             "Impact_n_Legacy": Impact_n_Legacy,
             "Further_Reading_n_References": Further_Reading_n_References,
-            "time_taken_sec": round(time.time() - start_time, 2),
         }
     except Exception as e:
         raise ValueError(str(e))
