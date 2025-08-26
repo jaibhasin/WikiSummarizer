@@ -91,7 +91,7 @@ class RAGService :
 
         chain = (
             RunnableParallel({
-                "context": itemgetter("question") | retriever,   # only pass question text
+                "context": itemgetter("question") | retriever,   # itemgetter is different from RunnablePassthrough as it gets the value of the key instead of the whole dict
                 "question": itemgetter("question"),
                 "title": itemgetter("title"),
             })
