@@ -22,8 +22,9 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=200
 
 splits = text_splitter.split_text(data)
 
-from langchain.vectorstores import FAISS
-db = FAISS.from_texts(splits, embd)
+# from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
+db = Chroma.from_texts(splits, embd)
 
 query = "Give me an introduction about " + topic
 docs = db.similarity_search(query, k=5)
@@ -35,6 +36,9 @@ rag_prompt = hub.pull("rlm/rag-prompt")
 
 chain = rag_prompt | chat
 
-response = chain.run(input_documents=docs, question=query)
+response = chain.invoke({
+    "context": docs,
+    "question": query
+})
 
-print(response)
+print(response.content)
