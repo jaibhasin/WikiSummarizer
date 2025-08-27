@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException , Request# use of http exception is to handle errors like 404 not found
+from pydantic import BaseModel
 from app.services.rag import RAGService
 from app.services.fetch_n_parse_wiki import wiki_search
 import asyncio
@@ -11,10 +12,17 @@ router = APIRouter(prefix="/wiki", tags=["Wikipedia"])
 wiki_search1 = wiki_search()
 rag1 = RAGService()
 
+class FetchPageRequest(BaseModel):
+    topic: str
+
+class GetResponseRequest(BaseModel):
+    query: str
+
 @router.post("/fetch_page")
-async def ingest_topic(topic: str , request: Request):
+async def ingest_topic(payload: FetchPageRequest , request: Request):
     try:
         start_time = time.time()
+        topic = payload.topic
         request.session['topic'] = topic  # Store the topic in the session
         # Fetch sections (make it async if possible in wiki_search)
         sections = await asyncio.to_thread(wiki_search1.get_sections, topic)
@@ -50,10 +58,10 @@ async def ingest_topic(topic: str , request: Request):
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.post('/get_response')
-async def get_response(query: str , request: Request):
+async def get_response(payload: GetResponseRequest , request: Request):
     try:
         topic = request.session.get('topic')  # Retrieve the topic from the session
-        response = await asyncio.to_thread(rag1.generate_response, topic, query)
+        response = await asyncio.to_thread(rag1.generate_response, topic, payload.query)
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
